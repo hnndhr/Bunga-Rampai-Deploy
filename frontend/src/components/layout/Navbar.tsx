@@ -89,7 +89,7 @@ export default function Navbar() {
           }
         )}
       >
-        <div className="flex items-center justify-between w-full -space-x-16">
+        <div className="flex items-center justify-between w-full md:-space-x-16 sm:space-x-0">
           {/* Logo & Title */}
           <div className="flex items-center">
             <Link href="/">

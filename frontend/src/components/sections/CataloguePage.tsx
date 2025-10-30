@@ -54,7 +54,6 @@ export default function CataloguePage() {
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0D1117] to-transparent"></div>
         </div>
-        <Navbar />
         <div className="absolute bottom-16 md:left-44 px-2 max-w-2xl text-start">
           <h1 className="text-5xl font-bold text-white uppercase tracking-wider">
             Bunga Rampai
