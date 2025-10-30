@@ -66,7 +66,7 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
     const fetchAndPrepareData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:3001/articles/${slug}`);
+        const res = await fetch(`/api/articles/${slug}`);
         if (!res.ok) throw new Error(`Gagal mengambil artikel: ${res.statusText}`);
         const data = await res.json();
 
@@ -219,7 +219,7 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
 
       const updatePayload = { ...meta, blocks: payloadBlocks };
       
-      const res = await fetch(`http://localhost:3001/articles/${slug}`, {
+      const res = await fetch(`/api/articles/${slug}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatePayload)
@@ -231,7 +231,7 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
       }
 
       setMessage("Artikel berhasil diupdate!");
-      router.push("/admin/admin-dashboard");
+      router.push("/");
 
     } catch (error: any) {
       console.error("Gagal menyimpan:", error);
