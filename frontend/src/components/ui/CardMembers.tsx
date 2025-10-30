@@ -38,7 +38,7 @@ export default function CardMember({
           className="absolute inset-0 rounded-2xl shadow-xl overflow-hidden"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <img src={image} alt={name} className="w-full h-full object-cover" />
+          <img src={image} alt={name} className="w-full h-full object-fill" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div className="absolute bottom-6 left-6 right-6 text-white">
             <MontserratText className="font-bold text-xl mb-1">{name}</MontserratText>
@@ -60,7 +60,7 @@ export default function CardMember({
               <img
                 src={imageBack}
                 alt={`${name} - back`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-fill"
               />
               <div className="absolute inset-0 bg-black/70" />
             </>

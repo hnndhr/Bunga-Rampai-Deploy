@@ -5,7 +5,7 @@ import AdminPagination from "./Pagination";
 import { MontserratText } from "@/components/ui/FontWrappers";
 import { useRouter } from "next/navigation";
 import { ArrowUp, ArrowDown, CheckCircle, XCircle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // 🆕 untuk animasi notifikasi
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SurveyData {
   id: string;
@@ -20,18 +20,8 @@ interface SurveyData {
   username: string | null;
   created_at: string;
   updated_at: string;
-  blocks?: BlockData[];
 }
 
-interface BlockData {
-  id: string;
-  ordering: number;
-  block_type: string;
-  content: string | object;
-  slug_survey: string;
-}
-
-// 🆕 Tipe notifikasi
 interface Notification {
   message: string;
   type: "success" | "error";
@@ -45,7 +35,7 @@ const SurveyTable: React.FC = () => {
   const [surveyData, setSurveyData] = useState<SurveyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
-  const [notification, setNotification] = useState<Notification | null>(null); // 🆕
+  const [notification, setNotification] = useState<Notification | null>(null);
 
   const [sortConfig, setSortConfig] = useState<{
     key: keyof SurveyData;
@@ -60,43 +50,30 @@ const SurveyTable: React.FC = () => {
     target?: string;
   }>({ open: false });
 
-  // 🆕 fungsi menampilkan notifikasi
+  // 🟢 Fungsi tampilkan notifikasi
   const showNotification = useCallback((message: string, type: "success" | "error") => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
+  // 🟢 Ambil data survei
   const fetchData = async (page: number) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `/api/articles?page=${page}&limit=${PAGE_LIMIT}`,
-        { method: "GET" }
-      );
-      const res = await response.json();
+      const res = await fetch(`/api/articles`, { method: "GET" });
+      const data = await res.json();
 
-      if (res == null) {
+      if (!Array.isArray(data)) {
         setSurveyData([]);
         setTotalPages(1);
-      } else if (Array.isArray(res)) {
-        setSurveyData(res);
-        setTotalPages(1);
-      } else if (Array.isArray(res.data)) {
-        setSurveyData(res.data);
-        const totalPagesFromMeta =
-          res.meta?.totalPages ??
-          res.totalPages ??
-          (res.meta?.total && res.meta?.limit
-            ? Math.ceil(res.meta.total / res.meta.limit)
-            : undefined);
-        setTotalPages(totalPagesFromMeta ?? 1);
-      } else {
-        setSurveyData([]);
-        setTotalPages(1);
+        return;
       }
+
+      setSurveyData(data);
+      setTotalPages(Math.ceil(data.length / PAGE_LIMIT));
     } catch (err) {
       console.error("Error fetching data:", err);
-      showNotification("Gagal memuat data survei.", "error"); // 🆕
+      showNotification("Gagal memuat data survei.", "error");
     } finally {
       setLoading(false);
     }
@@ -106,16 +83,12 @@ const SurveyTable: React.FC = () => {
     fetchData(currentPage);
   }, [currentPage]);
 
+  // 🟢 Sorting
   const handleSort = (key: keyof SurveyData) => {
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        return {
-          key,
-          direction: prev.direction === "asc" ? "desc" : "asc",
-        };
-      }
-      return { key, direction: "asc" };
-    });
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
   };
 
   const sortedData = useMemo(() => {
@@ -139,31 +112,16 @@ const SurveyTable: React.FC = () => {
     return sorted;
   }, [surveyData, sortConfig]);
 
-  const renderSortIcon = (key: keyof SurveyData) => (
-    <div className="flex flex-col ml-1">
-      <ArrowUp
-        size={12}
-        className={`${
-          sortConfig.key === key && sortConfig.direction === "asc"
-            ? "text-white"
-            : "text-white/40"
-        }`}
-      />
-      <ArrowDown
-        size={12}
-        className={`${
-          sortConfig.key === key && sortConfig.direction === "desc"
-            ? "text-white"
-            : "text-white/40"
-        }`}
-      />
-    </div>
-  );
-
+  // 🟢 Navigasi edit & create
   const handleEdit = (slug: string) => {
-    router.push(`/admin/articles/${slug}/update-article/`);
+    router.push(`/articles/${slug}/update-article`);
   };
 
+  const handleCreate = () => {
+    router.push(`/admin/articles/create-article`);
+  };
+
+  // 🟢 Hapus artikel
   const requestDelete = (slug: string) => {
     setConfirmDelete({ open: true, target: slug });
   };
@@ -171,20 +129,21 @@ const SurveyTable: React.FC = () => {
   const confirmDeleteAction = async () => {
     if (!confirmDelete.target) return;
     try {
-      const res = await fetch(
-        `http://localhost:3001/articles/${encodeURIComponent(confirmDelete.target)}`,
-        { method: "DELETE" }
-      );
+      const res = await fetch(`/api/articles/${encodeURIComponent(confirmDelete.target)}`, {
+        method: "DELETE",
+      });
+
       if (!res.ok) {
-        const txt = await res.text().catch(() => "Delete failed");
-        throw new Error(txt);
+        const { error } = await res.json();
+        throw new Error(error || "Gagal menghapus survei");
       }
+
       await fetchData(currentPage);
       setConfirmDelete({ open: false, target: undefined });
-      showNotification("Survei berhasil dihapus!", "success"); // 🆕
+      showNotification("Survei berhasil dihapus!", "success");
     } catch (error) {
       console.error(error);
-      showNotification("Gagal menghapus survei.", "error"); // 🆕
+      showNotification("Gagal menghapus survei.", "error");
     }
   };
 
@@ -192,7 +151,7 @@ const SurveyTable: React.FC = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  // 🆕 Komponen Notifikasi
+  // 🟢 Komponen notifikasi
   const CustomNotification = () => (
     <AnimatePresence>
       {notification && (
@@ -220,6 +179,7 @@ const SurveyTable: React.FC = () => {
     </AnimatePresence>
   );
 
+  // 🟢 Render
   if (loading) {
     return (
       <div className="flex-1 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-6 flex items-center justify-center">
@@ -230,7 +190,7 @@ const SurveyTable: React.FC = () => {
 
   return (
     <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-6 flex flex-col">
-      <CustomNotification /> {/* 🆕 Tambahkan di sini */}
+      <CustomNotification />
 
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
@@ -239,7 +199,7 @@ const SurveyTable: React.FC = () => {
           SURVEY MANAGEMENT
         </MontserratText>
         <button
-          onClick={() => router.push("/admin/articles/${slug}/create-article")}
+          onClick={handleCreate}
           className="px-6 py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg text-white font-medium hover:bg-white/30 transition-all shadow-lg"
         >
           Create Survey
@@ -249,37 +209,22 @@ const SurveyTable: React.FC = () => {
       {/* Table Header */}
       <div className="grid grid-cols-[0.2fr_1fr_0.5fr_0.5fr_0.5fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px]">
         <div>No</div>
-
-        <div
-          className="cursor-pointer select-none flex items-center"
-          onClick={() => handleSort("title")}
-        >
-          Title {renderSortIcon("title")}
+        <div className="cursor-pointer select-none flex items-center" onClick={() => handleSort("title")}>
+          Title <ArrowUp size={12} className="ml-1" />
         </div>
-
-        <div
-          className="cursor-pointer select-none flex items-center"
-          onClick={() => handleSort("updated_at")}
-        >
-          Last Modified {renderSortIcon("updated_at")}
+        <div className="cursor-pointer select-none flex items-center" onClick={() => handleSort("updated_at")}>
+          Last Modified <ArrowUp size={12} className="ml-1" />
         </div>
-
-        <div
-          className="cursor-pointer select-none flex items-center"
-          onClick={() => handleSort("username")}
-        >
-          Username {renderSortIcon("username")}
+        <div className="cursor-pointer select-none flex items-center" onClick={() => handleSort("username")}>
+          Username <ArrowUp size={12} className="ml-1" />
         </div>
-
         <div>Action</div>
       </div>
 
       {/* Table Body */}
       <div className="flex-1 overflow-auto max-h-[500px]">
         {sortedData.length === 0 ? (
-          <div className="text-white/60 text-center py-8">
-            No data available
-          </div>
+          <div className="text-white/60 text-center py-8">No data available</div>
         ) : (
           sortedData.map((item, index) => (
             <div
@@ -288,9 +233,7 @@ const SurveyTable: React.FC = () => {
             >
               <div>{(currentPage - 1) * PAGE_LIMIT + (index + 1)}</div>
               <div className="truncate">{item.title}</div>
-              <div>
-                {new Date(item.updated_at || item.created_at).toLocaleDateString()}
-              </div>
+              <div>{new Date(item.updated_at || item.created_at).toLocaleDateString()}</div>
               <div className="truncate">{item.username ?? "-"}</div>
               <div className="flex items-center space-x-3">
                 <button
@@ -317,7 +260,7 @@ const SurveyTable: React.FC = () => {
         onPageChange={handlePageChange}
       />
 
-      {/* Confirm Delete Modal */}
+      {/* Modal Konfirmasi Hapus */}
       {confirmDelete.open && (
         <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-xl p-6 max-w-sm w-full shadow-lg">

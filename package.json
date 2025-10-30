@@ -4,6 +4,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "clsx": "^2.1.1",
     "font": "^0.0.4",
+    "jose": "^6.1.0",
     "lucide-react": "^0.545.0",
     "next": "^16.0.1",
     "react": "^19.2.0",

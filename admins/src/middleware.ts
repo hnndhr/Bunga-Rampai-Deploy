@@ -1,23 +1,45 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose'; // ✅ benar: ambil function jwtVerify dari jose
 
-const SECRET_KEY = process.env.JWT_SECRET || "supersecretkey";
+const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'supersecret');
 
-export function middleware(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  // Cek semua route yang di bawah /admin
-  if (req.nextUrl.pathname.startsWith("/admin")) {
+  // 🔹 Skip middleware untuk public routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/login') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/images')
+  ) {
+    return NextResponse.next();
+  }
+
+  // 🔹 Proteksi route /admin/*
+  if (pathname.startsWith('/admin')) {
+    const token = request.cookies.get('token')?.value;
+
     if (!token) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      console.log('❌ No token found, redirecting to login');
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
     try {
-      jwt.verify(token, SECRET_KEY);
+      // 🔹 Verifikasi JWT dengan jose
+      await jwtVerify(token, SECRET_KEY); // ✅ ini menggantikan jwt.verify
+      console.log('✅ Token valid');
+
+      // 🔹 Lanjutkan request
       return NextResponse.next();
-    } catch (err) {
-      return NextResponse.redirect(new URL("/login", req.url));
+    } catch (error) {
+      console.error('❌ Token invalid:', error);
+
+      // 🔹 Hapus cookie yang invalid
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('token');
+      return response;
     }
   }
 
@@ -25,5 +47,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };
