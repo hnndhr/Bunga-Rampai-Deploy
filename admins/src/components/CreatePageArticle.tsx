@@ -25,7 +25,12 @@ type ArticleMeta = {
 export default function AdminArticleCreatePage() {
   const router = useRouter();
   const editorRef = useRef<EditorJS | null>(null);
-  const [meta, setMeta] = useState<ArticleMeta>({ title: "", slug: "", header_image: "https://images.unsplash.com/photo-1513185041617-8ab03f83d6c5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170" });
+  const [meta, setMeta] = useState<ArticleMeta>({
+    title: "",
+    slug: "",
+    header_image:
+      "https://images.unsplash.com/photo-1513185041617-8ab03f83d6c5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+  });
   const [infographicDesc, setInfographicDesc] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -168,6 +173,7 @@ export default function AdminArticleCreatePage() {
   async function handleSave() {
     setMessage(null);
     setSaving(true);
+
     if (!meta.title || !meta.slug) {
       setMessage("Title dan slug wajib diisi");
       setSaving(false);
@@ -175,19 +181,12 @@ export default function AdminArticleCreatePage() {
     }
 
     try {
-      console.log("Meta yang akan dikirim:", meta);
-      const metaCreated = await createArticleMeta();
-      if (!metaCreated) {
-        setSaving(false);
-        return;
-      }
-
-      const output = await editorRef.current ?.save();
+      const output = await editorRef.current?.save();
       const editorBlocks = (output?.blocks || []).map((b: any, i: number) =>
         mapEditorBlockToMyBlock(b, i + (infographicDesc ? 1 : 0))
       );
 
-      let blocksPayload: any[] = editorBlocks;
+      let blocksPayload: any[] = [];
       if (infographicDesc.trim() !== "") {
         const infographicBlock = {
           ordering: 1,
@@ -202,31 +201,30 @@ export default function AdminArticleCreatePage() {
         blocksPayload = editorBlocks.map((b, i) => ({ ...b, ordering: i + 1 }));
       }
 
-      if (blocksPayload.length === 0) {
-        setMessage("Artikel berhasil dibuat (tanpa konten).");
-        setSaving(false);
-        return;
+      const payload = {
+        ...meta,
+        blocks: blocksPayload,
+      };
+
+      console.log("📦 Payload yang dikirim ke server:", payload);
+
+      const res = await fetch("/api/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Gagal menyimpan artikel: ${txt}`);
       }
 
-      const resBlocks = await fetch(
-        `http://localhost:3001/articles/${encodeURIComponent(
-          meta.slug
-        )}/blocks`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(blocksPayload),
-        }
+      setMessage(
+        `Artikel berhasil disimpan dengan ${blocksPayload.length} blok!`
       );
-
-      if (!resBlocks.ok) {
-        const txt = await resBlocks.text();
-        throw new Error(`Gagal menyimpan blok konten: ${txt}`);
-      }
-
-      setMessage(`Artikel dan ${blocksPayload.length} blok berhasil disimpan!`);
-      router.push("/admin/admin-dashboard");
+      router.push("/");
     } catch (err: any) {
+      console.error("❌ Save error:", err);
       setMessage(err.message || "Terjadi error saat menyimpan");
     } finally {
       setSaving(false);

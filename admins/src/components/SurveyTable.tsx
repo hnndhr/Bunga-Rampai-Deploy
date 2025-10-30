@@ -51,26 +51,25 @@ const SurveyTable: React.FC = () => {
   }>({ open: false });
 
   // 🟢 Fungsi tampilkan notifikasi
-  const showNotification = useCallback((message: string, type: "success" | "error") => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  }, []);
+  const showNotification = useCallback(
+    (message: string, type: "success" | "error") => {
+      setNotification({ message, type });
+      setTimeout(() => setNotification(null), 3000);
+    },
+    []
+  );
 
   // 🟢 Ambil data survei
   const fetchData = async (page: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/articles`, { method: "GET" });
-      const data = await res.json();
+      const res = await fetch(`/api/articles?page=${page}&limit=${PAGE_LIMIT}`);
+      const json = await res.json();
 
-      if (!Array.isArray(data)) {
-        setSurveyData([]);
-        setTotalPages(1);
-        return;
-      }
+      if (!res.ok) throw new Error(json.error || "Gagal memuat data");
 
-      setSurveyData(data);
-      setTotalPages(Math.ceil(data.length / PAGE_LIMIT));
+      setSurveyData(json.data || []);
+      setTotalPages(json.totalPages || 1);
     } catch (err) {
       console.error("Error fetching data:", err);
       showNotification("Gagal memuat data survei.", "error");
@@ -118,7 +117,7 @@ const SurveyTable: React.FC = () => {
   };
 
   const handleCreate = () => {
-    router.push(`/admin/articles/create-article`);
+    router.push(`/articles/create-article`);
   };
 
   // 🟢 Hapus artikel
@@ -129,9 +128,12 @@ const SurveyTable: React.FC = () => {
   const confirmDeleteAction = async () => {
     if (!confirmDelete.target) return;
     try {
-      const res = await fetch(`/api/articles/${encodeURIComponent(confirmDelete.target)}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/articles/${encodeURIComponent(confirmDelete.target)}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!res.ok) {
         const { error } = await res.json();
@@ -209,13 +211,22 @@ const SurveyTable: React.FC = () => {
       {/* Table Header */}
       <div className="grid grid-cols-[0.2fr_1fr_0.5fr_0.5fr_0.5fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px]">
         <div>No</div>
-        <div className="cursor-pointer select-none flex items-center" onClick={() => handleSort("title")}>
+        <div
+          className="cursor-pointer select-none flex items-center"
+          onClick={() => handleSort("title")}
+        >
           Title <ArrowUp size={12} className="ml-1" />
         </div>
-        <div className="cursor-pointer select-none flex items-center" onClick={() => handleSort("updated_at")}>
+        <div
+          className="cursor-pointer select-none flex items-center"
+          onClick={() => handleSort("updated_at")}
+        >
           Last Modified <ArrowUp size={12} className="ml-1" />
         </div>
-        <div className="cursor-pointer select-none flex items-center" onClick={() => handleSort("username")}>
+        <div
+          className="cursor-pointer select-none flex items-center"
+          onClick={() => handleSort("username")}
+        >
           Username <ArrowUp size={12} className="ml-1" />
         </div>
         <div>Action</div>
@@ -224,7 +235,9 @@ const SurveyTable: React.FC = () => {
       {/* Table Body */}
       <div className="flex-1 overflow-auto max-h-[500px]">
         {sortedData.length === 0 ? (
-          <div className="text-white/60 text-center py-8">No data available</div>
+          <div className="text-white/60 text-center py-8">
+            No data available
+          </div>
         ) : (
           sortedData.map((item, index) => (
             <div
@@ -233,7 +246,11 @@ const SurveyTable: React.FC = () => {
             >
               <div>{(currentPage - 1) * PAGE_LIMIT + (index + 1)}</div>
               <div className="truncate">{item.title}</div>
-              <div>{new Date(item.updated_at || item.created_at).toLocaleDateString()}</div>
+              <div>
+                {new Date(
+                  item.updated_at || item.created_at
+                ).toLocaleDateString()}
+              </div>
               <div className="truncate">{item.username ?? "-"}</div>
               <div className="flex items-center space-x-3">
                 <button
