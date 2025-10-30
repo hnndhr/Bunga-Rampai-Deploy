@@ -6,8 +6,8 @@ import Navbar from "../layout/Navbar";
 export default function AboutUsPage() {
   const images = [
     "https://ik.imagekit.io/hnndhr/Members/1.png",
-    "https://ik.imagekit.io/hnndhr/Members/2.png",
     "https://ik.imagekit.io/hnndhr/Members/3.png",
+    "https://ik.imagekit.io/hnndhr/Members/2.png",
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
