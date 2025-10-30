@@ -41,7 +41,7 @@ const LogsTable: React.FC = () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `/api/logs?page=${currentPage}`,
+          `/api/survey_logs?page=${currentPage}`,
           { method: "GET" }
         );
         const res = await response.json();
