@@ -1,5 +1,10 @@
-import LoginPage from "@/components/LoginPage";
+import React from "react";
+import LoginPage from "../../components/LoginPage";
 
 export default function HomePage() {
-  return <LoginPage />;
+  return (
+    <main className="bg-slate-900 min-h-screen">
+      <LoginPage />
+    </main>
+  );
 }

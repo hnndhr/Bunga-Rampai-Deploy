@@ -29,17 +29,25 @@ export default function AdminArticleCreatePage() {
     title: "",
     slug: "",
     header_image:
-      "https://images.unsplash.com/photo-1513185041617-8ab03f83d6c5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170",
+      "https://images.unsplash.com/photo-1513185041617-8ab03f83d6c5?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=1170",
   });
   const [infographicDesc, setInfographicDesc] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   React.useEffect(() => {
-    let isMounted = true;
+    if (typeof window === "undefined") return;
 
+    let isMounted = true;
     const initializeEditor = async () => {
       if (editorRef.current) return;
+
+      const EditorJS = (await import("@editorjs/editorjs")).default;
+      const Header = (await import("@editorjs/header")).default;
+      const List = (await import("@editorjs/list")).default;
+      const Quote = (await import("@editorjs/quote")).default;
+      const Embed = (await import("@editorjs/embed")).default;
+      const Paragraph = (await import("@editorjs/paragraph")).default;
 
       const editor = new EditorJS({
         holder: "editorjs",
@@ -93,7 +101,7 @@ export default function AdminArticleCreatePage() {
       if ("infographic_desc" in metaPayload)
         delete metaPayload.infographic_desc;
 
-      const res = await fetch("http://localhost:3001/articles", {
+      const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(metaPayload),
@@ -206,7 +214,7 @@ export default function AdminArticleCreatePage() {
         blocks: blocksPayload,
       };
 
-      console.log("📦 Payload yang dikirim ke server:", payload);
+      console.log("Payload:", payload);
 
       const res = await fetch("/api/articles", {
         method: "POST",
@@ -220,11 +228,11 @@ export default function AdminArticleCreatePage() {
       }
 
       setMessage(
-        `Artikel berhasil disimpan dengan ${blocksPayload.length} blok!`
+        `Artikel berhasil disimpan dengan ${blocksPayload.length} blok.`
       );
       router.push("/");
     } catch (err: any) {
-      console.error("❌ Save error:", err);
+      console.error("Save error:", err);
       setMessage(err.message || "Terjadi error saat menyimpan");
     } finally {
       setSaving(false);
@@ -232,9 +240,9 @@ export default function AdminArticleCreatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e12] text-white px-6 py-10">
-      <div className="max-w-6xl mx-auto bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8">
-        <h1 className="text-3xl font-bold mb-6 text-center tracking-wide">
+    <div className="min-h-screen bg-[#fafafa] text-gray-900 px-6 py-10">
+      <div className="max-w-6xl mx-auto bg-white rounded-3xl border border-gray-200 shadow-md p-8">
+        <h1 className="text-3xl font-semibold mb-6 text-center tracking-wide text-gray-800">
           Create New Survey Article
         </h1>
 
@@ -253,15 +261,10 @@ export default function AdminArticleCreatePage() {
             <input
               key={input.name}
               name={input.name}
-              value={
-                input.name === "header_image"
-                  ? (meta as any)[input.name] ||
-                    "https://images.unsplash.com/photo-1513185041617-8ab03f83d6c5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170"
-                  : (meta as any)[input.name] || ""
-              }
+              value={(meta as any)[input.name] || ""}
               onChange={handleMetaChange}
               placeholder={input.placeholder}
-              className="p-3 rounded-xl bg-white/5 border border-white/20 focus:ring-2 focus:ring-white focus:outline-none text-white placeholder-white/50"
+              className="p-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-gray-600 focus:outline-none text-gray-900 placeholder-gray-400"
             />
           ))}
 
@@ -269,25 +272,11 @@ export default function AdminArticleCreatePage() {
             name="survey_type"
             value={meta.survey_type || ""}
             onChange={handleMetaChange}
-            className="
-              p-3 rounded-xl 
-              bg-white/5 border border-white/20 
-              text-white
-              focus:outline-none
-              focus:ring-2 focus:ring-white/70
-              focus:border-white/50
-              transition-all
-            "
+            className="p-3 rounded-xl bg-gray-50 border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-600 transition-all"
           >
-            <option value="" className="bg-black/80">
-              Pilih tipe survei
-            </option>
-            <option value="kolaborasi" className="bg-black/80">
-              Kolaborasi
-            </option>
-            <option value="mandiri" className="bg-black/80">
-              Mandiri
-            </option>
+            <option value="">Pilih tipe survei</option>
+            <option value="kolaborasi">Kolaborasi</option>
+            <option value="mandiri">Mandiri</option>
           </select>
 
           <input
@@ -295,7 +284,7 @@ export default function AdminArticleCreatePage() {
             value={meta.report_link || ""}
             onChange={handleMetaChange}
             placeholder="Link Laporan"
-            className="p-3 rounded-xl bg-white/5 border border-white/20 focus:ring-2 focus:ring-white text-white placeholder-white/50"
+            className="p-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-gray-600 text-gray-900 placeholder-gray-400"
           />
 
           <input
@@ -304,7 +293,7 @@ export default function AdminArticleCreatePage() {
             value={meta.respondents || ""}
             onChange={handleMetaChange}
             placeholder="Jumlah Responden"
-            className="p-3 rounded-xl bg-white/5 border border-white/20 focus:ring-2 focus:ring-white text-white placeholder-white/50"
+            className="p-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-gray-600 text-gray-900 placeholder-gray-400"
           />
 
           <input
@@ -317,7 +306,7 @@ export default function AdminArticleCreatePage() {
               })
             }
             placeholder="Link Infografis"
-            className="p-3 rounded-xl bg-white/5 border border-white/20 focus:ring-2 focus:ring-white text-white placeholder-white/50 md:col-span-2"
+            className="p-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-gray-600 text-gray-900 placeholder-gray-400 md:col-span-2"
           />
 
           <textarea
@@ -325,14 +314,14 @@ export default function AdminArticleCreatePage() {
             value={infographicDesc}
             onChange={(e) => setInfographicDesc(e.target.value)}
             placeholder="Pengenalan survei"
-            className="p-3 rounded-xl bg-white/5 border border-white/20 focus:ring-2 focus:ring-white text-white placeholder-white/50 md:col-span-2 h-28 resize-none"
+            className="p-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-gray-600 text-gray-900 placeholder-gray-400 md:col-span-2 h-28 resize-none"
           />
         </div>
 
         {/* EditorJS Container */}
         <div
           id="editorjs"
-          className="bg-white/5 border border-white/20 rounded-2xl min-h-[300px] p-4"
+          className="bg-gray-50 border border-gray-300 rounded-2xl min-h-[300px] p-4"
         ></div>
 
         {/* Buttons */}
@@ -340,10 +329,10 @@ export default function AdminArticleCreatePage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${
+            className={`px-6 py-2.5 rounded-xl font-medium transition-all ${
               saving
-                ? "bg-blue-400 text-white cursor-wait"
-                : "bg-blue-600 hover:bg-blue-500 text-white"
+                ? "bg-gray-400 text-white cursor-wait"
+                : "bg-gray-800 hover:bg-gray-700 text-white"
             }`}
           >
             {saving ? "Saving..." : "Save Article"}
@@ -354,13 +343,13 @@ export default function AdminArticleCreatePage() {
               editorRef.current?.clear();
               setInfographicDesc("");
             }}
-            className="px-6 py-2.5 rounded-xl border border-white/20 text-white hover:bg-white/10 transition-all"
+            className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-800 hover:bg-gray-100 transition-all"
           >
             Clear
           </button>
 
           {message && (
-            <div className="ml-4 text-sm text-white/70 italic">{message}</div>
+            <div className="ml-4 text-sm text-gray-600 italic">{message}</div>
           )}
         </div>
       </div>
