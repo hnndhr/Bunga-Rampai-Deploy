@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import Navbar from "../layout/Navbar";
-import VisionMissionSection from "./VisiMisiSection";
-import Members from "./members/Members-PHT";
 
 //About Us - Landing Page
 
