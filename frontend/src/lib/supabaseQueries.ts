@@ -84,7 +84,20 @@ export async function getFullArticle(slug: string) {
     ]);
 
     if (!article) return null;
-    return { ...article, blocks };
+
+    // ✅ Parse content JSON di setiap block
+    const parsedBlocks = (blocks || []).map((block) => ({
+      ...block,
+      content: (() => {
+        try {
+          return JSON.parse(block.content);
+        } catch {
+          return block.content; // fallback kalau bukan JSON
+        }
+      })(),
+    }));
+
+    return { ...article, blocks: parsedBlocks };
   } catch (err) {
     console.error("Error fetching full article:", err);
     return null;

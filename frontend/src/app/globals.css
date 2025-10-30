@@ -253,3 +253,10 @@ html {
 .prose h2 {
   margin-top: 4rem !important;
 }
+
+/* Smooth font rendering */
+.font-abhaya {
+  font-smooth: always;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
