@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import BlockRenderer from "./admin-page/BlocksRenderer";
 import InfographicIntro from "./InfographicIntro";
 import { motion } from "framer-motion";
-
+import { getFullArticle } from "@/lib/supabaseQueries";
 
 type Block = {
   id: string;
@@ -45,30 +45,26 @@ export default function ArticleSection({ slug }: { slug: string }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!slug) return;
+  if (!slug) return;
 
-    const fetchArticle = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `http://localhost:3001/articles/${encodeURIComponent(slug)}`
-        );
-        if (!response.ok) throw new Error("Gagal memuat artikel");
+  const fetchArticle = async () => {
+    setLoading(true);
+    setError(null);
 
-        const data: Article = await response.json();
-        setArticle(data);
-        setError(null);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Terjadi kesalahan");
-        setArticle(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const fullArticle = await getFullArticle(slug);
 
-    fetchArticle();
-  }, [slug]);
+    if (!fullArticle) {
+      setError("Artikel tidak ditemukan");
+      setArticle(null);
+    } else {
+      setArticle(fullArticle);
+    }
+
+    setLoading(false);
+  };
+
+  fetchArticle();
+}, [slug]);
 
   if (loading)
     return (

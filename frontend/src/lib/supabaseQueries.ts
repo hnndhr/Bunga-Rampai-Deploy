@@ -1,4 +1,3 @@
-// src/lib/supabaseQueries.ts
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -6,12 +5,13 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// 🔹 Ambil daftar survei untuk halaman utama
 export async function getSurveys({
   filterType = "all",
   sortBy = "created_at",
   order = "desc",
   search = "",
-  limit
+  limit,
 }: {
   filterType?: string;
   sortBy?: string;
@@ -38,11 +38,13 @@ export async function getSurveys({
 
   const { data, error } = await query;
   if (error) {
-    console.error(error);
+    console.error("Error fetching surveys:", error);
     return [];
   }
   return data || [];
 }
+
+// 🔹 Ambil artikel berdasarkan slug
 export async function getArticleBySlug(slug: string) {
   const { data, error } = await supabase
     .from("survey_articles")
@@ -50,7 +52,41 @@ export async function getArticleBySlug(slug: string) {
     .eq("slug", slug)
     .single();
 
-  if (error) return null;
+  if (error) {
+    console.error("Error fetching article:", error);
+    return null;
+  }
   return data;
 }
 
+// 🔹 Ambil blok artikel berdasarkan slug
+export async function getArticleBlocks(slug: string) {
+  const { data, error } = await supabase
+    .from("survey_article_blocks")
+    .select("*")
+    .eq("slug_survey", slug)
+    .order("ordering", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching article blocks:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// 🔹 Gabungkan artikel + blok untuk konsumsi di page
+export async function getFullArticle(slug: string) {
+  try {
+    const [article, blocks] = await Promise.all([
+      getArticleBySlug(slug),
+      getArticleBlocks(slug),
+    ]);
+
+    if (!article) return null;
+    return { ...article, blocks };
+  } catch (err) {
+    console.error("Error fetching full article:", err);
+    return null;
+  }
+}
