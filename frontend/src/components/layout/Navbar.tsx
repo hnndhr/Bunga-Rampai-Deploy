@@ -90,6 +90,25 @@ export default function Navbar() {
         )}
       >
         <div className="flex items-center justify-between w-full -space-x-16">
+          {/* Logo & Title */}
+          <div className="flex items-center">
+            <Link href="/">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center -translate-y-1">
+                <Image
+                  src="/images/rnd_logo.png"
+                  alt="rnd logo"
+                  width={40}
+                  height={40}
+                />
+              </div>
+            </Link>
+            <Link
+              href="/"
+              className={clsx({ "pointer-events-none": isScrolled })}
+            >
+              <AnimatedTitle isScrolled={isScrolled} />
+            </Link>
+          </div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8 font-abhaya text-xl leading-140 tracking-10">
