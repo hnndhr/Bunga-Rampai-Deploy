@@ -70,7 +70,7 @@ const SurveyTable: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/articles?page=${page}&limit=${PAGE_LIMIT}`,
+        `/api/articles?page=${page}&limit=${PAGE_LIMIT}`,
         { method: "GET" }
       );
       const res = await response.json();

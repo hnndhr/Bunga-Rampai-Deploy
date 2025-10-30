@@ -35,7 +35,7 @@ export default function CreateAdminModal({
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:3001/admins/create", {
+      const res = await fetch("/api/admins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
