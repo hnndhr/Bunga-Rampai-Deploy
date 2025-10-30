@@ -25,17 +25,7 @@ export default function AdminDashboardPage() {
 
   // Penjaga otentikasi
   useEffect(() => {
-    // Ambil token dari localStorage
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      // --- INI ADALAH PENJAGANYA ---
-      // Mengganti router.push dengan window.location.href
-      window.location.href = "/admin";
-    } else {
-      // Jika ADA token, izinkan halaman untuk tampil
-      setIsLoading(false);
-    }
+    setIsLoading(false);
   }, []); // Dependency array dikosongkan
 
   // Fungsi render konten dari layout baru

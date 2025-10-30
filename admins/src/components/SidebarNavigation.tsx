@@ -1,17 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react"; // 1. Import hook useState dan useEffect
+import React, { useState, useEffect } from "react";
 import { BarChart3, Users, FileText, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode"; // 2. Import library yang baru di-install
-
-// 3. (Opsional tapi sangat direkomendasikan) Buat interface untuk struktur token
-// Ini membuat kode lebih aman dan mudah dibaca. Pastikan properti 'role' ada.
-interface DecodedAdminToken {
-  role: string;
-  // Anda bisa tambahkan properti lain yang ada di token, misal: userId: number;
-}
 
 interface SidebarNavigationProps {
   onNavigate: (view: "Logs" | "admin" | "survey" | "profile") => void;
@@ -23,32 +15,28 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   currentView,
 }) => {
   const router = useRouter();
-
-  // 4. Buat state untuk menyimpan role pengguna
-  // Awalnya kita tidak tahu rolenya, jadi nilainya null
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  // 5. Gunakan useEffect untuk membaca token saat komponen pertama kali dimuat
-  // Ini hanya akan berjalan sekali saat sidebar muncul di layar.
   useEffect(() => {
-    // Ambil token dari penyimpanan browser
-    const token = localStorage.getItem("token");
-
-    // Jika token ada...
-    if (token) {
+    async function fetchUser() {
       try {
-        // ...coba decode token tersebut
-        const decodedToken = jwtDecode<DecodedAdminToken>(token);
-        // Ambil 'role' dari dalam token dan simpan ke state
-        setUserRole(decodedToken.role);
-      } catch (error) {
-        // Jika tokennya rusak atau tidak valid, akan terjadi error
-        console.error("Token tidak valid:", error);
-        // Tindakan pengamanan: jika token bermasalah, paksa logout
-        handleLogout();
+        const res = await fetch("/api/me", { credentials: "include" });
+        if (!res.ok) throw new Error("Unauthorized");
+        const data = await res.json();
+        setUserRole(data.user.role);
+      } catch {
+        router.push("/admin"); // kalau token invalid, logout otomatis
       }
     }
-  }, []); // Array kosong `[]` berarti "jalankan hanya sekali"
+
+    fetchUser();
+  }, [router]);
+
+  const handleLogout = async () => {
+    // Hapus cookie token
+    await fetch("/api/logout", { method: "POST" });
+    router.push("/admin");
+  };
 
   const navItem = (
     view: "Logs" | "admin" | "survey" | "profile",
@@ -67,30 +55,19 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     </div>
   );
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/admin");
-  };
-
   return (
     <div className="w-20 flex flex-col items-center py-8 justify-between">
-      {/* Logo */}
       <div className="w-24 h-24 flex items-center justify-center cursor-pointer">
         <Image src="/images/rnd_logo.png" alt="rnd logo" width={50} height={50} />
       </div>
 
-      {/* Navigasi */}
       <div className="bg-white/10 backdrop-blur-md rounded-full border border-white/30 shadow-lg p-2 flex flex-col space-y-4">
         {navItem("Logs", BarChart3)}
-
-        {/* 6. INTI LOGIKA: Tampilkan item ini HANYA jika userRole adalah 'master' */}
         {userRole === "master" && navItem("admin", Users)}
-
         {navItem("survey", FileText)}
         {navItem("profile", User)}
       </div>
 
-      {/* Tombol Logout */}
       <div
         onClick={handleLogout}
         className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-lg hover:bg-red-500/50 transition-all cursor-pointer group"
@@ -100,7 +77,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
-        > 
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

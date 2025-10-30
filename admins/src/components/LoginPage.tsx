@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react"; // Impor useState
 import { useRouter } from "next/navigation";
-// Impor 'MontserratText' dihapus karena menyebabkan error kompilasi (file tidak ditemukan)
-// import { MontserratText } from "../ui/FontWrappers";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,7 +12,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // URL backend Anda
-  const BACKEND_URL = "http://localhost:3001/admins/login";
+  const BACKEND_URL = "/api/login";
 
   // Fungsi untuk menangani submit formulir
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -40,15 +38,12 @@ export default function LoginPage() {
       }
 
       // Login berhasil, 'data.token' seharusnya ada
-      if (data.token) {
-        // Simpan token di localStorage untuk sesi login
-        localStorage.setItem("token", data.token);
-        // Arahkan ke dashboard admin
-        router.push("/admin/admin-dashboard");
+      if (data.success) {
+        // token sudah otomatis diset via cookies di route handler
+        window.location.href = "/";
       } else {
-        throw new Error("Login berhasil tetapi tidak menerima token.");
+        throw new Error(data.message || "Login gagal.");
       }
-
     } catch (err: any) {
       // Tangani error (baik dari 'throw new Error' di atas atau error jaringan)
       setError(err.message);
@@ -129,4 +124,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
