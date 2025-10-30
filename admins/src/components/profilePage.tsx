@@ -1,3 +1,4 @@
+//  admins/src/components/profilePage.tsx
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -103,7 +104,7 @@ export default function ProfilePage() {
         password: newPassword ? "***" : undefined,
       });
 
-      const response = await fetch(`http://localhost:3001/admins/${id}`, {
+      const response = await fetch(`/api/admins/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
