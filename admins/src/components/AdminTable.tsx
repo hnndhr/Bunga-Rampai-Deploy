@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import AdminPagination from "./Pagination";
-import { MontserratText } from "@/components/ui/FontWrappers"
+import { MontserratText } from "@/components/ui/FontWrappers";
 import CreateAdminModal from "./CreateAdminModal";
 import { ArrowUp, ArrowDown, CheckCircle, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"; // 🆕 Animasi notifikasi
@@ -31,30 +31,45 @@ const AdminTable: React.FC = () => {
 
   // 🆕 Notification system
   const [notification, setNotification] = useState<Notification | null>(null);
-  const showNotification = useCallback((message: string, type: "success" | "error") => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  }, []);
+  const showNotification = useCallback(
+    (message: string, type: "success" | "error") => {
+      setNotification({ message, type });
+      setTimeout(() => setNotification(null), 3000);
+    },
+    []
+  );
 
   // Sorting
   const [sortColumn, setSortColumn] = useState<keyof AdminData>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Delete confirmation state
-  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; target?: string }>({
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    target?: string;
+  }>({
     open: false,
   });
 
   const fetchData = async (page = currentPage) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/admins?page=${page}&limit=${PAGE_LIMIT}`);
+      const response = await fetch(
+        `/api/admins?page=${page}&limit=${PAGE_LIMIT}`
+      );
       const res = await response.json();
 
-      if (res?.status === "OK" && Array.isArray(res.data)) {
+      console.log("Fetched admins:", res); // 🔍 debug
+
+      // Karena respon langsung array
+      if (Array.isArray(res)) {
+        setAdminData(res);
+        setTotalPages(1); // atau nanti ubah kalau backend support pagination
+      } else if (Array.isArray(res.data)) {
         setAdminData(res.data);
         setTotalPages(res.meta?.totalPages ?? 1);
       } else {
+        console.warn("Unexpected response format:", res);
         setAdminData([]);
       }
     } catch (err) {
@@ -104,7 +119,7 @@ const AdminTable: React.FC = () => {
     if (!confirmDelete.target) return;
     try {
       const res = await fetch(
-        `http://localhost:3001/admins/${encodeURIComponent(confirmDelete.target)}`,
+        `/api/admins/${encodeURIComponent(confirmDelete.target)}`,
         { method: "DELETE" }
       );
 
@@ -162,7 +177,6 @@ const AdminTable: React.FC = () => {
   return (
     <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-6 flex flex-col">
       <CustomNotification /> {/* 🆕 Tambahkan di sini */}
-
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div></div>
@@ -176,11 +190,10 @@ const AdminTable: React.FC = () => {
           Create Admin
         </button>
       </div>
-
       {/* Table Header */}
-      <div className="grid grid-cols-[0.5fr_1fr_1fr_1fr_1fr_1fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px]">
+      <div className="grid grid-cols-[0.75fr_1.2fr_1.2fr_1.2fr_1.2fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px]">
         <div>No</div>
-        {["name", "username", "password", "role"].map((col) => (
+        {["name", "username", "role"].map((col) => (
           <div
             key={col}
             className="flex items-center gap-1 cursor-pointer select-none"
@@ -191,13 +204,17 @@ const AdminTable: React.FC = () => {
               <ArrowUp
                 size={10}
                 className={`${
-                  sortColumn === col && sortDirection === "asc" ? "text-white" : "text-white/40"
+                  sortColumn === col && sortDirection === "asc"
+                    ? "text-white"
+                    : "text-white/40"
                 }`}
               />
               <ArrowDown
                 size={10}
                 className={`${
-                  sortColumn === col && sortDirection === "desc" ? "text-white" : "text-white/40"
+                  sortColumn === col && sortDirection === "desc"
+                    ? "text-white"
+                    : "text-white/40"
                 }`}
               />
             </div>
@@ -205,21 +222,21 @@ const AdminTable: React.FC = () => {
         ))}
         <div>Action</div>
       </div>
-
       {/* Table Body */}
       <div className="flex-1 overflow-auto">
         {sortedData.length === 0 ? (
-          <div className="text-white/60 text-center py-8">No data available</div>
+          <div className="text-white/60 text-center py-8">
+            No data available
+          </div>
         ) : (
           sortedData.map((item, index) => (
             <div
               key={item.id}
-              className="grid grid-cols-[0.5fr_1fr_1fr_1fr_1fr_1fr] gap-4 py-4 border-b border-white/10 text-white/80 hover:bg-white/5 transition-all text-sm"
+              className="grid grid-cols-[0.75fr_1.2fr_1.2fr_1.2fr_1.2fr] gap-4 py-4 border-b border-white/10 text-white/80 hover:bg-white/5 transition-all text-sm"
             >
               <div>{(currentPage - 1) * PAGE_LIMIT + (index + 1)}</div>
               <div className="truncate">{item.name}</div>
               <div className="truncate">{item.username}</div>
-              <div className="truncate">{item.password}</div>
               <div>{item.role}</div>
               <div className="flex items-center space-x-3">
                 <button
@@ -233,13 +250,11 @@ const AdminTable: React.FC = () => {
           ))
         )}
       </div>
-
       <AdminPagination
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
-
       <CreateAdminModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -249,7 +264,6 @@ const AdminTable: React.FC = () => {
           showNotification("Admin berhasil dibuat!", "success"); // 🆕 Ganti toast lama
         }}
       />
-
       {/* Confirm Delete Modal */}
       {confirmDelete.open && (
         <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">

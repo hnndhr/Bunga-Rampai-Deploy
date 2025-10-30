@@ -1,6 +1,6 @@
 // app/article/[slug]/page.tsx
 import React from 'react';
-import AdminArticleCreatePage from '@/components/sections/admin-page/CreatePageArticle';
+import AdminArticleCreatePage from '@/components/CreatePageArticle';
 
 interface Props {
   params: { slug: string };
