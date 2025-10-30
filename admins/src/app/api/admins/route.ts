@@ -1,7 +1,7 @@
 //  admins/src/app/api/admins/route.ts
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function GET() {
   const { data, error } = await supabase

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   const { data, error } = await supabase
