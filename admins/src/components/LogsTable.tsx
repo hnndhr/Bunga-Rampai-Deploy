@@ -1,3 +1,4 @@
+// admins/src/components/LogsTable.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -40,7 +41,7 @@ const LogsTable: React.FC = () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:3001/connect/survey-articles/?page=${currentPage}`,
+          `/api/logs?page=${currentPage}`,
           { method: "GET" }
         );
         const res = await response.json();
