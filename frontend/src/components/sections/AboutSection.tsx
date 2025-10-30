@@ -12,11 +12,11 @@ export default function CatalogueSection() {
         <div className="flex flex-col-reverse lg:flex-row items-center justify-between gap-16">
           {/* BAGIAN KIRI: Gambar */}
           <div className="lg:w-1/2 w-full">
-            <div className="w-full h-[220px] md:h-[320px] lg:h-[460px] rounded-2xl overflow-hidden shadow-xl">
+            <div className="w-full h-full rounded-2xl overflow-hidden shadow-xl mb-10">
               <img
-                src="https://ik.imagekit.io/hnndhr/Members/1.jpg?updatedAt=1761742340433?tr=w-720,h-1080,fo-auto"
+                src="https://ik.imagekit.io/hnndhr/Members/1.jpg?updatedAt=1761742340433?tr=w-1080,h-1080,fo-auto"
                 alt="Member Kementerian Riset dan Data"
-                className="w-full h-full object-fill transition-transform duration-700 hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
               />
             </div>
           </div>
