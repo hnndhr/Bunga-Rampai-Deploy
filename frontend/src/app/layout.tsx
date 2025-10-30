@@ -9,6 +9,9 @@ const cormorant  = Cormorant ({
 export const metadata: Metadata = {
   title: "Bunga Rampai",
   description: "Exploring Facts, Building the Future",
+  icons: {
+    icon: "/RnD.svg",
+  }
 };
 
 export default function RootLayout({
