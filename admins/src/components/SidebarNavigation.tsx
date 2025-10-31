@@ -28,22 +28,22 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
         const data = await res.json();
         setUserRole(data.user.role);
 
-        // Contoh tambahan: fetch data lain sesuai role
+        // 🔹 Fetch data lain (harus juga include cookie)
         if (data.user.role === "master") {
           const [adminsRes, surveyRes] = await Promise.all([
-            fetch("/api/admins"),
-            fetch("/api/articles"),
+            fetch("/api/admins", { credentials: "include" }),
+            fetch("/api/articles", { credentials: "include" }),
           ]);
 
           const admins = await adminsRes.json();
           const articles = await surveyRes.json();
 
-          console.log("📋 Admins:", admins);
-          console.log("📝 Articles:", articles);
+          console.log("✅ Admins:", admins);
+          console.log("✅ Articles:", articles);
         }
       } catch (err) {
         console.error("❌ Auth error:", err);
-        router.push("/admin"); // Token invalid → redirect login
+        router.push("/admin");
       } finally {
         setLoading(false);
       }
@@ -86,7 +86,12 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     <div className="w-20 flex flex-col items-center py-8 justify-between">
       {/* Logo */}
       <div className="w-24 h-24 flex items-center justify-center cursor-pointer">
-        <Image src="/images/rnd_logo.png" alt="rnd logo" width={50} height={50} />
+        <Image
+          src="/images/rnd_logo.png"
+          alt="rnd logo"
+          width={50}
+          height={50}
+        />
       </div>
 
       {/* Navigasi */}

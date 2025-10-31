@@ -51,7 +51,8 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
       setLoading(true);
       try {
         const res = await fetch(`/api/articles/${slug}`);
-        if (!res.ok) throw new Error(`Gagal mengambil artikel: ${res.statusText}`);
+        if (!res.ok)
+          throw new Error(`Gagal mengambil artikel: ${res.statusText}`);
         const data = await res.json();
 
         setMeta({
@@ -67,20 +68,30 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
         });
 
         const allBlocks = data.blocks || [];
-        const infBlock = allBlocks.find((b: any) => b.block_type === "infographic_desc");
+        const infBlock = allBlocks.find(
+          (b: any) => b.block_type === "infographic_desc"
+        );
         setInfographicDesc(infBlock?.content || "");
 
-        const normalBlocks = allBlocks.filter((b: any) => b.block_type !== "infographic_desc");
+        const normalBlocks = allBlocks.filter(
+          (b: any) => b.block_type !== "infographic_desc"
+        );
 
         const formattedBlocks = normalBlocks.map((dbBlock: any) => {
           const content = tryParseJSON(dbBlock.content);
           switch (dbBlock.block_type) {
             case "paragraph":
             case "quote":
-              return { type: dbBlock.block_type, data: { text: content || "" } };
+              return {
+                type: dbBlock.block_type,
+                data: { text: content || "" },
+              };
             case "headline":
             case "header":
-              return { type: "header", data: { text: content || "", level: 2 } };
+              return {
+                type: "header",
+                data: { text: content || "", level: 2 },
+              };
             case "list":
               return {
                 type: "list",
@@ -104,10 +115,16 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
             case "image_caption":
               return {
                 type: "image_caption",
-                data: { image: content?.image || "", caption: content?.caption || "" },
+                data: {
+                  image: content?.image || "",
+                  caption: content?.caption || "",
+                },
               };
             default:
-              return { type: "paragraph", data: { text: String(content || "") } };
+              return {
+                type: "paragraph",
+                data: { text: String(content || "") },
+              };
           }
         });
 
@@ -151,14 +168,29 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
   }, [loading, editorData]);
 
   const handleMetaChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
+    const trimmedValue = value.trim();
+
     if (name === "infographic_link") {
-      setMeta((prev) => ({ ...prev, infographic_link: convertGoogleDriveLink(value) }));
+      if (trimmedValue === "" || trimmedValue.includes("drive.google.com")) {
+        setMeta((prev) => ({
+          ...prev,
+          infographic_link: convertGoogleDriveLink(trimmedValue),
+        }));
+      } else {
+        alert("Hanya link dari Google Drive yang diperbolehkan.");
+      }
       return;
     }
-    setMeta((prev) => ({ ...prev, [name]: value }));
+
+    setMeta((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSave = async () => {
@@ -313,7 +345,10 @@ export default function UpdatePageArticle({ slug }: { slug: string }) {
             type="number"
             value={meta.respondents ?? ""}
             onChange={(e) =>
-              setMeta((p) => ({ ...p, respondents: Number(e.target.value) || null }))
+              setMeta((p) => ({
+                ...p,
+                respondents: Number(e.target.value) || null,
+              }))
             }
             placeholder="Jumlah Responden"
             className="p-3 rounded-xl bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:outline-none"

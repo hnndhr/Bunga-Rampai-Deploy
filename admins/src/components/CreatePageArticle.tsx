@@ -299,13 +299,18 @@ export default function AdminArticleCreatePage() {
           <input
             name="infographic_link"
             value={meta.infographic_link || ""}
-            onChange={(e) =>
-              setMeta({
-                ...meta,
-                infographic_link: convertGoogleDriveLink(e.target.value),
-              })
-            }
-            placeholder="Link Infografis"
+            onChange={(e) => {
+              const value = e.target.value.trim();
+              if (value === "" || value.includes("drive.google.com")) {
+                setMeta({
+                  ...meta,
+                  infographic_link: convertGoogleDriveLink(value),
+                });
+              } else {
+                alert("Hanya link dari Google Drive yang diperbolehkan.");
+              }
+            }}
+            placeholder="Link Infografis (Google Drive)"
             className="p-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-gray-600 text-gray-900 placeholder-gray-400 md:col-span-2"
           />
 

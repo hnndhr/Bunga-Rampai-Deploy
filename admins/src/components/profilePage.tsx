@@ -1,19 +1,12 @@
-//  admins/src/components/profilePage.tsx
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion"; // AnimatePresence is great for conditional rendering with animation
-import { Lock, User, ShieldCheck, CheckCircle, XCircle } from "lucide-react"; // Added CheckCircle/XCircle for notification icons
+import { motion, AnimatePresence } from "framer-motion";
+import { Lock, User, ShieldCheck, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { jwtDecode } from "jwt-decode";
 import { supabase } from "@/lib/supabaseClient";
-
-// ✅ Tipe token yang disimpan di localStorage (misalnya hasil login)
-interface DecodedToken {
-  id: string; // sesuai payload JWT kamu
-}
 
 // ✅ Struktur data admin dari tabel Supabase
 interface AdminProfile {
@@ -33,98 +26,74 @@ export default function ProfilePage() {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  // 🆕 State untuk Notifikasi
   const [notification, setNotification] = useState<Notification | null>(null);
 
-  // 🆕 Fungsi untuk menampilkan notifikasi
+  // 🔔 Fungsi tampilkan notifikasi sementara
   const showNotification = useCallback((message: string, type: "success" | "error") => {
     setNotification({ message, type });
-    // Hilangkan notifikasi setelah 3 detik
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
+    setTimeout(() => setNotification(null), 3000);
   }, []);
 
-
-  // 🔹 Ambil data admin berdasarkan id dari token
+  // 🔹 Ambil data profil berdasarkan session cookie
   useEffect(() => {
-    const fetchProfile = async () => {
+    async function fetchProfile() {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("Token not found");
-          return;
-        }
+        // Ambil data user aktif dari /api/me
+        const res = await fetch("/api/me", { credentials: "include" });
+        if (!res.ok) throw new Error("Unauthorized");
 
-        // Decode token dan ambil id
-        const decoded = jwtDecode<DecodedToken>(token);
-        const { id } = decoded;
+        const { user } = await res.json();
+        const id = user.id;
 
-        // 🔹 Query berdasarkan kolom "id", bukan "id"
+        // Ambil detail user dari tabel Supabase
         const { data, error } = await supabase
-          .from('admins')
-          .select('name, username, role')
-          .eq('id', id)
+          .from("admins")
+          .select("name, username, role")
+          .eq("id", id)
           .maybeSingle();
 
         if (error) throw error;
+        if (!data) throw new Error("User not found in database.");
 
-        if (data) {
-          setProfile(data);
-          setNewUsername(data.username);
-        } else {
-          console.error('No profile data returned');
-        }
+        setProfile(data);
+        setNewUsername(data.username);
       } catch (err) {
-        console.error("Error fetching profile:", err);
+        console.error("❌ Error fetching profile:", err);
+        showNotification("Gagal memuat profil. Silakan login ulang.", "error");
       }
-    };
+    }
 
     fetchProfile();
-  }, []);
+  }, [showNotification]);
 
-  // 🔹 Update username & password
+  // 🔹 Update username dan/atau password
   const handleSave = async () => {
     if (!profile) return;
     setIsSaving(true);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        showNotification("Token not found. Please login again.", "error");
-        return;
-      }
+      // Ambil ulang user aktif dari cookie session
+      const meRes = await fetch("/api/me", { credentials: "include" });
+      if (!meRes.ok) throw new Error("Unauthorized");
+      const { user } = await meRes.json();
+      const id = user.id;
 
-      const decoded = jwtDecode<DecodedToken>(token);
-      const { id } = decoded;
-
-      console.log("Sending update request:", {
-        id,
-        username: newUsername,
-        password: newPassword ? "***" : undefined,
-      });
-
+      // PATCH ke endpoint API kamu
       const response = await fetch(`/api/admins/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           username: newUsername,
           ...(newPassword && { password: newPassword }),
         }),
       });
 
-      console.log("Response status:", response.status);
       const result = await response.json();
-      console.log("Response data:", result);
-
       if (result.status === "ERROR") {
         throw new Error(result.error?.message || "Profil gagal diperbarui.");
       }
 
-      // Update state dengan data dari response
       if (result.data && result.data[0]) {
         setProfile({
           name: result.data[0].name,
@@ -134,12 +103,13 @@ export default function ProfilePage() {
       }
 
       setNewPassword("");
-      // 🆕 Ganti alert dengan notifikasi custom
       showNotification("Profil berhasil diperbarui!", "success");
     } catch (err) {
-      console.error("Error updating profile:", err);
-      // 🆕 Ganti alert dengan notifikasi custom
-      showNotification(err instanceof Error ? err.message : "Profil gagal diperbarui.", "error");
+      console.error("❌ Error updating profile:", err);
+      showNotification(
+        err instanceof Error ? err.message : "Profil gagal diperbarui.",
+        "error"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -154,15 +124,15 @@ export default function ProfilePage() {
     );
   }
 
-  // 🆕 Komponen Notifikasi Custom
+  // 🧩 Komponen notifikasi animasi
   const CustomNotification = () => (
     <AnimatePresence>
       {notification && (
         <motion.div
-          initial={{ y: -100, opacity: 0 }} // Mulai dari atas, tersembunyi
-          animate={{ y: 0, opacity: 1 }}     // Slide-in ke posisi
-          exit={{ y: -100, opacity: 0 }}      // Slide-out kembali ke atas
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           className={`fixed top-0 left-0 right-0 z-50 p-4 shadow-lg ${
             notification.type === "success"
               ? "bg-green-500/90 text-white"
@@ -182,10 +152,10 @@ export default function ProfilePage() {
     </AnimatePresence>
   );
 
-  // 🔹 UI
+  // 🔹 UI utama
   return (
     <div className="h-screen flex items-center justify-center overflow-hidden relative">
-      <CustomNotification /> {/* 🆕 Tambahkan Komponen Notifikasi */}
+      <CustomNotification />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -195,9 +165,7 @@ export default function ProfilePage() {
       >
         <Card className="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-3xl overflow-hidden">
           <CardContent className="p-8 space-y-6 text-center text-white">
-            <h1 className="text-3xl font-semibold tracking-wide">
-              Admin Profile
-            </h1>
+            <h1 className="text-3xl font-semibold tracking-wide">Admin Profile</h1>
             <p className="text-gray-300 text-sm">Manage your account details</p>
 
             {/* Profile Info */}
