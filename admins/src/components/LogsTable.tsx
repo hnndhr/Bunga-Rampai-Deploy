@@ -27,23 +27,21 @@ const LogsTable: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Tambahan: state untuk sorting
   const [sortConfig, setSortConfig] = useState<{
     key: keyof SurveyData;
     direction: "asc" | "desc";
   } | null>({
     key: "updated_at",
-    direction: "desc", // default: terbaru ke terlama
+    direction: "desc",
   });
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(
-          `/api/survey_logs?page=${currentPage}`,
-          { method: "GET" }
-        );
+        const response = await fetch(`/api/survey_logs?page=${currentPage}`, {
+          method: "GET",
+        });
         const res = await response.json();
 
         if (res?.status === "OK" && Array.isArray(res.data)) {
@@ -63,21 +61,18 @@ const LogsTable: React.FC = () => {
     fetchData();
   }, [currentPage]);
 
-  // Fungsi sorting client-side
   const sortedData = useMemo(() => {
     if (!sortConfig) return surveyData;
 
     return [...surveyData].sort((a, b) => {
       const key = sortConfig.key;
 
-      // handle tanggal
       if (key === "created_at" || key === "updated_at") {
         const dateA = new Date(a.updated_at || a.created_at).getTime();
         const dateB = new Date(b.updated_at || b.created_at).getTime();
         return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
       }
 
-      // handle string biasa
       const valA = (a[key] ?? "").toString().toLowerCase();
       const valB = (b[key] ?? "").toString().toLowerCase();
       if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
@@ -89,7 +84,6 @@ const LogsTable: React.FC = () => {
   const handleSort = (key: keyof SurveyData) => {
     setSortConfig((prev) => {
       if (prev && prev.key === key) {
-        // toggle arah sort
         return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
       }
       return { key, direction: "asc" };
@@ -139,75 +133,82 @@ const LogsTable: React.FC = () => {
 
   return (
     <div className="flex-1 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 flex flex-col">
-      {/* Header Section */}
+      {/* ===== Header Section ===== */}
       <div className="flex justify-center items-center mb-8">
         <MontserratText className="text-2xl md:text-3xl font-bold text-white tracking-wider">
           SURVEY LOGS
         </MontserratText>
       </div>
 
-      {/* Table Header */}
-      <div className="grid grid-cols-[0.5fr_1fr_0.5fr_0.5fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px] text-center">
-        <div
-          className="flex justify-center items-center cursor-pointer select-none"
-          onClick={() => handleSort("updated_at")}
-        >
-          Date {renderSortArrow("updated_at")}
-        </div>
-
-        <div
-          className="flex justify-center items-center cursor-pointer select-none"
-          onClick={() => handleSort("title")}
-        >
-          Survey Title {renderSortArrow("title")}
-        </div>
-
-        <div
-          className="flex justify-center items-center cursor-pointer select-none"
-          onClick={() => handleSort("username")}
-        >
-          Username {renderSortArrow("username")}
-        </div>
-
-        <div>Action</div>
-      </div>
-
-      {/* Table Body */}
-      <div className="flex-1 overflow-auto">
-        {sortedData.length === 0 ? (
-          <div className="text-white/60 text-center py-8">
-            No data available
-          </div>
-        ) : (
-          sortedData.map((item) => (
+      {/* ===== Table Wrapper (Scrollable di layar kecil) ===== */}
+      <div className="overflow-x-auto">
+        {/* ===== Table Container ===== */}
+        <div className="min-w-[600px]">
+          {/* ===== Table Header ===== */}
+          <div className="grid grid-cols-[0.5fr_1fr_0.5fr_0.5fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px] text-center">
             <div
-              key={item.id}
-              className="grid grid-cols-[0.5fr_1fr_0.5fr_0.5fr] gap-4 py-4 border-b border-white/10 text-white/80 hover:bg-white/5 transition-all text-sm"
+              className="flex justify-center items-center cursor-pointer select-none"
+              onClick={() => handleSort("updated_at")}
             >
-              {/* Date */}
-              <div className="text-center">
-                {new Date(
-                  item.updated_at || item.created_at
-                ).toLocaleDateString()}
-              </div>
-
-              {/* Title */}
-              <div className="truncate overflow-hidden whitespace-nowrap text-ellipsis">
-                {item.title}
-              </div>
-
-              {/* Username */}
-              <div className="truncate overflow-hidden whitespace-nowrap text-ellipsis text-center">
-                {item.username ?? "-"}
-              </div>
-
-              {/* Action */}
-              <div className="text-center">{getActionLabel(item)}</div>
+              Date {renderSortArrow("updated_at")}
             </div>
-          ))
-        )}
+
+            <div
+              className="flex justify-center items-center cursor-pointer select-none"
+              onClick={() => handleSort("title")}
+            >
+              Survey Title {renderSortArrow("title")}
+            </div>
+
+            <div
+              className="flex justify-center items-center cursor-pointer select-none"
+              onClick={() => handleSort("username")}
+            >
+              Username {renderSortArrow("username")}
+            </div>
+
+            <div>Action</div>
+          </div>
+
+          {/* ===== Table Body ===== */}
+          <div className="flex-1 overflow-y-auto">
+            {sortedData.length === 0 ? (
+              <div className="text-white/60 text-center py-8">
+                No data available
+              </div>
+            ) : (
+              sortedData.map((item) => (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[0.5fr_1fr_0.5fr_0.5fr] gap-4 py-4 border-b border-white/10 text-white/80 hover:bg-white/5 transition-all text-sm"
+                >
+                  {/* Date */}
+                  <div className="text-center">
+                    {new Date(
+                      item.updated_at || item.created_at
+                    ).toLocaleDateString()}
+                  </div>
+
+                  {/* Title */}
+                  <div className="truncate overflow-hidden whitespace-nowrap text-ellipsis">
+                    {item.title}
+                  </div>
+
+                  {/* Username */}
+                  <div className="truncate overflow-hidden whitespace-nowrap text-ellipsis text-center">
+                    {item.username ?? "-"}
+                  </div>
+
+                  {/* Action */}
+                  <div className="text-center">{getActionLabel(item)}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* ===== Pagination Section ===== */}
       <AdminPagination
         currentPage={currentPage}
         totalPages={totalPages}

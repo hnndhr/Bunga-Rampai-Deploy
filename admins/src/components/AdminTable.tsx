@@ -5,7 +5,7 @@ import AdminPagination from "./Pagination";
 import { MontserratText } from "@/components/ui/FontWrappers";
 import CreateAdminModal from "./CreateAdminModal";
 import { ArrowUp, ArrowDown, CheckCircle, XCircle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // 🆕 Animasi notifikasi
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AdminData {
   id: string;
@@ -28,9 +28,14 @@ const AdminTable: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // 🆕 Notification system
   const [notification, setNotification] = useState<Notification | null>(null);
+  const [sortColumn, setSortColumn] = useState<keyof AdminData>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [confirmDelete, setConfirmDelete] = useState<{
+    open: boolean;
+    target?: string;
+  }>({ open: false });
+
   const showNotification = useCallback(
     (message: string, type: "success" | "error") => {
       setNotification({ message, type });
@@ -39,18 +44,6 @@ const AdminTable: React.FC = () => {
     []
   );
 
-  // Sorting
-  const [sortColumn, setSortColumn] = useState<keyof AdminData>("name");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  // Delete confirmation state
-  const [confirmDelete, setConfirmDelete] = useState<{
-    open: boolean;
-    target?: string;
-  }>({
-    open: false,
-  });
-
   const fetchData = async (page = currentPage) => {
     setLoading(true);
     try {
@@ -58,18 +51,13 @@ const AdminTable: React.FC = () => {
         `/api/admins?page=${page}&limit=${PAGE_LIMIT}`
       );
       const res = await response.json();
-
-      console.log("Fetched admins:", res); // 🔍 debug
-
-      // Karena respon langsung array
       if (Array.isArray(res)) {
         setAdminData(res);
-        setTotalPages(1); // atau nanti ubah kalau backend support pagination
+        setTotalPages(1);
       } else if (Array.isArray(res.data)) {
         setAdminData(res.data);
         setTotalPages(res.meta?.totalPages ?? 1);
       } else {
-        console.warn("Unexpected response format:", res);
         setAdminData([]);
       }
     } catch (err) {
@@ -109,12 +97,10 @@ const AdminTable: React.FC = () => {
     return sorted;
   }, [adminData, sortColumn, sortDirection]);
 
-  // Request delete confirmation
   const requestDelete = (id: string) => {
     setConfirmDelete({ open: true, target: id });
   };
 
-  // Delete confirmed
   const confirmDeleteAction = async () => {
     if (!confirmDelete.target) return;
     try {
@@ -122,15 +108,12 @@ const AdminTable: React.FC = () => {
         `/api/admins/${encodeURIComponent(confirmDelete.target)}`,
         { method: "DELETE" }
       );
-
       if (!res.ok) {
         const txt = await res.text().catch(() => "Delete failed");
         throw new Error(txt);
       }
-
       await fetchData(currentPage);
       setConfirmDelete({ open: false, target: undefined });
-      // 🆕 Tampilkan notifikasi sukses
       showNotification("Admin berhasil dihapus!", "success");
     } catch (error) {
       console.error(error);
@@ -138,7 +121,6 @@ const AdminTable: React.FC = () => {
     }
   };
 
-  // 🆕 Komponen notifikasi custom (framer-motion)
   const CustomNotification = () => (
     <AnimatePresence>
       {notification && (
@@ -175,95 +157,108 @@ const AdminTable: React.FC = () => {
   }
 
   return (
-    <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-6 flex flex-col">
-      <CustomNotification /> {/* 🆕 Tambahkan di sini */}
+    <div className="relative flex-1 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-4 md:p-6 flex flex-col">
+      <CustomNotification />
+
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div></div>
-        <MontserratText className="text-2xl md:text-3xl font-bold text-white tracking-wider">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-8 gap-3">
+        <MontserratText className="text-xl md:text-3xl font-bold text-white tracking-wider text-center md:text-left">
           ADMIN MANAGEMENT
         </MontserratText>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="px-6 py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg text-white font-medium hover:bg-white/30 transition-all shadow-lg"
+          className="px-4 py-2 md:px-6 md:py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg text-white font-medium hover:bg-white/30 transition-all shadow-lg text-sm md:text-base"
         >
           Create Admin
         </button>
       </div>
-      {/* Table Header */}
-      <div className="grid grid-cols-[0.75fr_1.2fr_1.2fr_1.2fr_1.2fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px]">
-        <div>No</div>
-        {["name", "username", "role"].map((col) => (
-          <div
-            key={col}
-            className="flex items-center gap-1 cursor-pointer select-none"
-            onClick={() => handleSort(col as keyof AdminData)}
-          >
-            {col.charAt(0).toUpperCase() + col.slice(1)}
-            <div className="flex flex-col">
-              <ArrowUp
-                size={10}
-                className={`${
-                  sortColumn === col && sortDirection === "asc"
-                    ? "text-white"
-                    : "text-white/40"
-                }`}
-              />
-              <ArrowDown
-                size={10}
-                className={`${
-                  sortColumn === col && sortDirection === "desc"
-                    ? "text-white"
-                    : "text-white/40"
-                }`}
-              />
-            </div>
-          </div>
-        ))}
-        <div>Action</div>
-      </div>
-      {/* Table Body */}
-      <div className="flex-1 overflow-auto">
-        {sortedData.length === 0 ? (
-          <div className="text-white/60 text-center py-8">
-            No data available
-          </div>
-        ) : (
-          sortedData.map((item, index) => (
-            <div
-              key={item.id}
-              className="grid grid-cols-[0.75fr_1.2fr_1.2fr_1.2fr_1.2fr] gap-4 py-4 border-b border-white/10 text-white/80 hover:bg-white/5 transition-all text-sm"
-            >
-              <div>{(currentPage - 1) * PAGE_LIMIT + (index + 1)}</div>
-              <div className="truncate">{item.name}</div>
-              <div className="truncate">{item.username}</div>
-              <div>{item.role}</div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => requestDelete(item.id)}
-                  className="px-3 py-1.5 text-sm rounded-lg bg-red-500/20 border border-red-600/40 text-red-400 hover:bg-red-500/30 transition-all"
-                >
-                  Delete
-                </button>
+
+      {/* Responsive scrollable table container */}
+      <div className="overflow-x-auto -mx-4 md:mx-0">
+        <div className="min-w-[650px] md:min-w-0 px-4 md:px-0">
+          {/* Table Header */}
+          <div className="grid grid-cols-[0.75fr_1.2fr_1.2fr_1.2fr_1.2fr] gap-4 pb-4 border-b border-white/20 text-white/90 font-medium text-[13px]">
+            <div>No</div>
+            {["name", "username", "role"].map((col) => (
+              <div
+                key={col}
+                className="flex items-center gap-1 cursor-pointer select-none"
+                onClick={() => handleSort(col as keyof AdminData)}
+              >
+                {col.charAt(0).toUpperCase() + col.slice(1)}
+                <div className="flex flex-col">
+                  <ArrowUp
+                    size={10}
+                    className={`${
+                      sortColumn === col && sortDirection === "asc"
+                        ? "text-white"
+                        : "text-white/40"
+                    }`}
+                  />
+                  <ArrowDown
+                    size={10}
+                    className={`${
+                      sortColumn === col && sortDirection === "desc"
+                        ? "text-white"
+                        : "text-white/40"
+                    }`}
+                  />
+                </div>
               </div>
-            </div>
-          ))
-        )}
+            ))}
+            <div>Action</div>
+          </div>
+
+          {/* Table Body */}
+          <div className="flex-1 overflow-y-auto">
+            {sortedData.length === 0 ? (
+              <div className="text-white/60 text-center py-8">
+                No data available
+              </div>
+            ) : (
+              sortedData.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[0.75fr_1.2fr_1.2fr_1.2fr_1.2fr] gap-4 py-4 border-b border-white/10 text-white/80 hover:bg-white/5 transition-all text-sm min-w-max"
+                >
+                  <div>{(currentPage - 1) * PAGE_LIMIT + (index + 1)}</div>
+                  <div className="truncate">{item.name}</div>
+                  <div className="truncate">{item.username}</div>
+                  <div>{item.role}</div>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => requestDelete(item.id)}
+                      className="px-3 py-1.5 text-sm rounded-lg bg-red-500/20 border border-red-600/40 text-red-400 hover:bg-red-500/30 transition-all"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
-      <AdminPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+
+      {/* Pagination */}
+      <div className="mt-4 md:mt-6">
+        <AdminPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </div>
+
       <CreateAdminModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
           setIsCreateModalOpen(false);
           fetchData(1);
-          showNotification("Admin berhasil dibuat!", "success"); // 🆕 Ganti toast lama
+          showNotification("Admin berhasil dibuat!", "success");
         }}
       />
+
       {/* Confirm Delete Modal */}
       {confirmDelete.open && (
         <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
